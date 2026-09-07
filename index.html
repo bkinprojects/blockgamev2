@@ -1,305 +1,341 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tetris thingy</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #001133;
-    --text: #ffffff;
-    --border: #ffffff;
-    --bg-hover: #112244;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tetris thingy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #001133;
+      --text: #ffffff;
+      --border: #ffffff;
+      --bg-hover: #112244;
+    }
 
-  body.light-mode {
-    --bg: #ffffff;
-    --text: #000000;
-    --border: #000000;
-    --bg-hover: #e0e0e0;
-  }
+    body.light-mode {
+      --bg: #ffffff;
+      --text: #000000;
+      --border: #000000;
+      --bg-hover: #e0e0e0;
+    }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-  
-  body {
-    background-color: var(--bg);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    color: var(--text);
-    font-family: 'Times New Roman', serif;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-  }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    
+    body {
+      background-color: var(--bg);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: var(--text);
+      font-family: 'Times New Roman', serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
 
-  .screen {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100vw;
-    height: 100vh;
-    position: absolute;
-    top: 0; left: 0;
-    z-index: 1;
-    padding: 20px;
-  }
-  .screen.active { display: flex; z-index: 10; }
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      top: 0; left: 0;
+      z-index: 1;
+      padding: 20px;
+    }
+    .screen.active { display: flex; z-index: 10; }
 
-  .title-logo {
-    font-size: 3rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    margin-bottom: 5px;
-  }
-  .subtitle {
-    font-size: 1.2rem;
-    margin-bottom: 30px;
-  }
+    .title-logo {
+      font-size: 3rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .subtitle {
+      font-size: 1.2rem;
+      margin-bottom: 30px;
+    }
 
-  .card {
-    background: var(--bg);
-    border: 2px solid var(--border);
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    width: 100%;
-    max-width: 600px;
-  }
+    .card {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+      max-width: 600px;
+    }
 
-  .btn {
-    background: var(--bg);
-    border: 2px solid var(--border);
-    color: var(--text);
-    padding: 14px 24px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-    font-family: inherit;
-    text-transform: uppercase;
-  }
-  .btn:hover {
-    background: var(--text);
-    color: var(--bg);
-  }
+    .btn {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      color: var(--text);
+      padding: 14px 24px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      text-transform: uppercase;
+    }
+    .btn:hover {
+      background: var(--text);
+      color: var(--bg);
+    }
 
-  .game-container {
-    display: flex;
-    gap: 24px;
-    align-items: flex-start;
-    justify-content: center;
-  }
+    .game-container {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      justify-content: center;
+    }
 
-  .panel {
-    background: var(--bg);
-    border: 2px solid var(--border);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    min-width: 170px;
-  }
+    .panel {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 170px;
+    }
 
-  .input-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 5px; }
-  .input-key { border: 2px solid var(--border); border-radius: 4px; color: var(--text); font-size: 0.7rem; font-weight: bold; text-align: center; padding: 4px 0; transition: background 0.05s; }
-  .input-key.active { background: var(--text); color: var(--bg); }
-  .val-input { width: 55px; background: var(--bg); color: var(--text); border: 2px solid var(--border); font-family: inherit; font-size: 0.9rem; font-weight: bold; text-align: center; border-radius: 4px; padding: 2px; outline: none; }
+    .input-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 5px; }
+    .input-key { border: 2px solid var(--border); border-radius: 4px; color: var(--text); font-size: 0.7rem; font-weight: bold; text-align: center; padding: 4px 0; transition: background 0.05s; }
+    .input-key.active { background: var(--text); color: var(--bg); }
+    .val-input { width: 55px; background: var(--bg); color: var(--text); border: 2px solid var(--border); font-family: inherit; font-size: 0.9rem; font-weight: bold; text-align: center; border-radius: 4px; padding: 2px; outline: none; }
 
-  .stat-box {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .stat-label {
-    font-size: 0.8rem;
-    font-weight: bold;
-    text-transform: uppercase;
-  }
-  .stat-value {
-    font-size: 1.6rem;
-    font-weight: bold;
-  }
+    .stat-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: bold;
+    }
 
-  .combo-box {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-  }
+    .combo-box {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
 
-  .combo-mult {
-    font-size: 0.95rem;
-    font-weight: bold;
-    opacity: 0.75;
-    display: none;
-  }
-  .combo-mult.show {
-    display: inline;
-  }
+    .combo-mult {
+      font-size: 0.95rem;
+      font-weight: bold;
+      opacity: 0.75;
+      display: none;
+    }
+    .combo-mult.show {
+      display: inline;
+    }
 
-  canvas {
-    background: var(--bg);
-    border: 2px solid var(--border);
-  }
-  .hold-next-canvas {
-    border: none;
-  }
+    canvas {
+      background: var(--bg);
+      border: 2px solid var(--border);
+    }
+    .hold-next-canvas {
+      border: none;
+    }
 
-  .tabs {
-    display: flex;
-    border-bottom: 2px solid var(--border);
-    margin-bottom: 12px;
-  }
-  .tab-btn {
-    flex: 1;
-    background: none;
-    border: none;
-    color: var(--text);
-    font-weight: bold;
-    font-size: 0.95rem;
-    padding: 10px;
-    cursor: pointer;
-    font-family: inherit;
-  }
-  .tab-btn.active {
-    background: var(--text);
-    color: var(--bg);
-  }
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 12px;
+    }
+    .tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-weight: bold;
+      font-size: 0.95rem;
+      padding: 10px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .tab-btn.active {
+      background: var(--text);
+      color: var(--bg);
+    }
 
-  .tab-content { display: none; flex-direction: column; gap: 16px; max-height: 480px; overflow-y: auto; padding-right: 6px; -ms-overflow-style: none; scrollbar-width: none; }
-  .tab-content::-webkit-scrollbar { display: none; }
-  .tab-content.active { display: flex; }
+    .tab-content { display: none; flex-direction: column; gap: 16px; max-height: 480px; overflow-y: auto; padding-right: 6px; -ms-overflow-style: none; scrollbar-width: none; }
+    .tab-content::-webkit-scrollbar { display: none; }
+    .tab-content.active { display: flex; }
 
-  .setting-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-  }
-  .setting-label {
-    font-weight: bold;
-    font-size: 0.95rem;
-  }
-  .setting-desc {
-    font-size: 0.75rem;
-    opacity: 0.8;
-  }
-  
-  input[type="range"] { accent-color: var(--text); cursor: pointer; }
-  input[type="color"] { border: 1px solid var(--border); width: 32px; height: 32px; cursor: pointer; background: transparent; padding: 0; }
-  select { background: var(--bg); color: var(--text); border: 2px solid var(--border); padding: 5px; font-family: inherit; cursor: pointer; }
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .setting-label {
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+    .setting-desc {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+    
+    input[type="range"] { accent-color: var(--text); cursor: pointer; }
+    input[type="color"] { border: 1px solid var(--border); width: 32px; height: 32px; cursor: pointer; background: transparent; padding: 0; }
+    select { background: var(--bg); color: var(--text); border: 2px solid var(--border); padding: 5px; font-family: inherit; cursor: pointer; }
 
-  .keybind-btn {
-    min-width: 100px;
-    padding: 6px 12px;
-    font-family: inherit;
-    font-size: 0.85rem;
-    text-align: center;
-    background: var(--bg);
-    border: 2px solid var(--border);
-    cursor: pointer;
-    color: var(--text);
-    font-weight: bold;
-  }
-  .keybind-btn.listening {
-    background: var(--text);
-    color: var(--bg);
-  }
+    .keybind-btn {
+      min-width: 100px;
+      padding: 6px 12px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      text-align: center;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      cursor: pointer;
+      color: var(--text);
+      font-weight: bold;
+    }
+    .keybind-btn.listening {
+      background: var(--text);
+      color: var(--bg);
+    }
 
-  input[type="checkbox"] {
-    width: 20px; height: 20px;
-    accent-color: var(--text);
-    cursor: pointer;
-  }
+    input[type="checkbox"] {
+      width: 20px; height: 20px;
+      accent-color: var(--text);
+      cursor: pointer;
+    }
 
-  .action-text {
-    position: absolute;
-    left: 50%;
-    top: 40%;
-    transform: translate(-50%, -50%);
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--text);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    text-align: center;
-    width: 100%;
-    line-height: 1.4;
-  }
-  .action-text.show { opacity: 1; }
+    .action-text {
+      position: absolute;
+      left: 50%;
+      top: 40%;
+      transform: translate(-50%, -50%);
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--text);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      text-align: center;
+      width: 100%;
+      line-height: 1.4;
+    }
+    .action-text.show { opacity: 1; }
 
-  .countdown-overlay {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 4rem;
-    font-weight: bold;
-    color: var(--text);
-    z-index: 50;
-    pointer-events: none;
-  }
+    .countdown-overlay {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      font-weight: bold;
+      color: var(--text);
+      z-index: 50;
+      pointer-events: none;
+    }
 
-  .sprint-watermark {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 10rem;
-    font-weight: bold;
-    color: var(--text);
-    opacity: 0.1;
-    pointer-events: none;
-    z-index: 2;
-    display: none;
-  }
+    .sprint-watermark {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 10rem;
+      font-weight: bold;
+      color: var(--text);
+      opacity: 0.1;
+      pointer-events: none;
+      z-index: 2;
+      display: none;
+    }
 
-  .modal-overlay {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 200;
-  }
-  body.light-mode .modal-overlay {
-    background: rgba(255, 255, 255, 0.85);
-  }
-  .modal-overlay.active { display: flex; }
+    .modal-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+    }
+    body.light-mode .modal-overlay {
+      background: rgba(255, 255, 255, 0.85);
+    }
+    .modal-overlay.active { display: flex; }
 
-  .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    width: 100%;
-    margin-top: 10px;
-  }
-  .stats-card {
-    background: var(--bg);
-    border: 2px solid var(--border);
-    padding: 10px;
-    text-align: center;
-  }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .stats-card {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      padding: 10px;
+      text-align: center;
+    }
 
-  .color-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-  }
-  .color-picker-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-size: 0.75rem;
-    font-weight: bold;
-    gap: 4px;
-  }
-</style>
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .color-picker-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+      gap: 4px;
+    }
+
+    .audio-card {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      padding: 12px;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .audio-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .audio-title {
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+    .audio-desc {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+    .audio-controls {
+      display: flex;
+      gap: 8px;
+    }
+    .audio-btn {
+      flex: 1;
+      padding: 6px;
+      font-size: 0.75rem;
+    }
+    .audio-btn.selected {
+      background: var(--text);
+      color: var(--bg);
+    }
+  </style>
 </head>
 <body>
 
@@ -342,6 +378,7 @@
         <button class="tab-btn active" onclick="switchTab('gameplay')">Gameplay</button>
         <button class="tab-btn" onclick="switchTab('video')">Video & UI</button>
         <button class="tab-btn" onclick="switchTab('colors')">Colors</button>
+        <button class="tab-btn" onclick="switchTab('audio')">Audio</button>
       </div>
 
       <!-- Tab: Gameplay -->
@@ -450,6 +487,70 @@
           <button class="btn" style="flex:1; padding:8px; font-size:0.8rem;" onclick="applyColorPreset('default')">Default</button>
           <button class="btn" style="flex:1; padding:8px; font-size:0.8rem;" onclick="applyColorPreset('neon')">Neon</button>
           <button class="btn" style="flex:1; padding:8px; font-size:0.8rem;" onclick="applyColorPreset('pastel')">Pastel</button>
+        </div>
+      </div>
+
+      <!-- Tab: Audio -->
+      <div id="tab-audio" class="tab-content">
+        <div class="setting-row">
+          <div><div class="setting-label">Master Volume</div></div>
+          <input type="range" id="sl-volume" min="0" max="100" value="80" oninput="updateSetting('volume', this.value)">
+          <input type="text" id="val-volume" class="val-input" onchange="updateSetting('volume', this.value)">
+        </div>
+        
+        <div class="setting-row" style="margin-top: 10px;">
+          <div class="setting-label" style="width: 100%; border-bottom: 1px solid var(--border); padding-bottom: 4px;">Piece Placement Sound</div>
+        </div>
+        
+        <div class="audio-card">
+          <div class="audio-card-header">
+            <div>
+              <div class="audio-title">None</div>
+              <div class="audio-desc">Play in silence.</div>
+            </div>
+          </div>
+          <div class="audio-controls">
+            <button id="btn-sound-none" class="btn audio-btn" onclick="setDropSound('none')">Select</button>
+          </div>
+        </div>
+
+        <div class="audio-card">
+          <div class="audio-card-header">
+            <div>
+              <div class="audio-title">Soft Sine Drop</div>
+              <div class="audio-desc">Subtle resonant wooden tap.</div>
+            </div>
+          </div>
+          <div class="audio-controls">
+            <button class="btn audio-btn" onclick="previewSound('soft_drop')">Preview</button>
+            <button id="btn-sound-soft_drop" class="btn audio-btn" onclick="setDropSound('soft_drop')">Select</button>
+          </div>
+        </div>
+        
+        <div class="audio-card">
+          <div class="audio-card-header">
+            <div>
+              <div class="audio-title">Organic Water Drop</div>
+              <div class="audio-desc">Upward fluid plop frequency glide.</div>
+            </div>
+          </div>
+          <div class="audio-controls">
+            <button class="btn audio-btn" onclick="previewSound('water_drop')">Preview</button>
+            <button id="btn-sound-water_drop" class="btn audio-btn" onclick="setDropSound('water_drop')">Select</button>
+          </div>
+        </div>
+        
+        <div class="audio-card">
+          <div class="audio-card-header">
+            <div>
+              <div class="audio-title">Crisp Tactile Switch</div>
+              <div class="audio-desc">Tight mechanical keyboard click.</div>
+            </div>
+          </div>
+          <div class="audio-controls">
+            <button class="btn audio-btn" onclick="previewSound('tactile_switch')">Preview</button>
+            <button id="btn-sound-tactile_switch" class="btn audio-btn" onclick="setDropSound('tactile_switch')">Select</button>
+          </div>
         </div>
       </div>
 
@@ -609,7 +710,8 @@
       das: 130, arr: 10, sdf: 20, darkmode: true, motionSickness: true,
       gridOpacity: 25, font: 'Courier New', ghostAlpha: 35,
       sat: 100, bright: 100, hue: 0, watermark: false, bgImage: '',
-      uiBgColor: '#001133', showMult: true
+      uiBgColor: '#001133', showMult: true,
+      volume: 80, dropSound: 'soft_drop' // NEW AUDIO CONFIG
     };
 
     let pieceColors = JSON.parse(JSON.stringify(PIECE_DEFAULTS));
@@ -642,6 +744,145 @@
     let moveHistory = [];
     let cvBoard, ctxBoard, cvHold, ctxHold, cvNext, ctxNext, cvColorPreview, ctxColorPreview;
     let shakeAmount = 0;
+
+    // --- Audio Engine ---
+    let audioCtx = null;
+    let masterGain = null;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+        masterGain = audioCtx.createGain();
+        masterGain.connect(audioCtx.destination);
+        updateAudioVolume();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+    
+    function updateAudioVolume() {
+      if (masterGain) {
+        masterGain.gain.setValueAtTime(cfg.volume / 100, audioCtx.currentTime);
+      }
+    }
+
+    const audioPresets = {
+      soft_drop: function(ctx, out) {
+        const t = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1400, t);
+        filter.frequency.exponentialRampToValueAtTime(120, t + 0.08);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(260, t);
+        osc.frequency.exponentialRampToValueAtTime(75, t + 0.08);
+
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.linearRampToValueAtTime(0.7, t + 0.003);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(out);
+
+        osc.start(t);
+        osc.stop(t + 0.1);
+      },
+      water_drop: function(ctx, out) {
+        const pitch = 0.5; // Force 50% pitch
+        const t = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(450 * pitch, t);
+        osc.frequency.exponentialRampToValueAtTime(1600 * pitch, t + 0.06);
+
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.linearRampToValueAtTime(0.5, t + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+
+        osc.connect(gain);
+        gain.connect(out);
+
+        osc.start(t);
+        osc.stop(t + 0.1);
+      },
+      tactile_switch: function(ctx, out) {
+        const t = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(1200, t);
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1800, t);
+        osc.frequency.exponentialRampToValueAtTime(400, t + 0.02);
+
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.linearRampToValueAtTime(0.5, t + 0.001);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.025);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(out);
+
+        osc.start(t);
+        osc.stop(t + 0.03);
+      }
+    };
+
+    function playDropSound() {
+      if (cfg.dropSound === 'none') return;
+      initAudio();
+      const preset = audioPresets[cfg.dropSound];
+      if (preset) {
+        preset(audioCtx, masterGain);
+      }
+    }
+    
+    function previewSound(soundId) {
+      initAudio();
+      const preset = audioPresets[soundId];
+      if (preset) {
+        preset(audioCtx, masterGain);
+      }
+    }
+    
+    function setDropSound(soundId) {
+      cfg.dropSound = soundId;
+      saveData();
+      updateAudioUI();
+    }
+    
+    function updateAudioUI() {
+      if (document.getElementById('sl-volume')) document.getElementById('sl-volume').value = cfg.volume;
+      if (document.getElementById('val-volume')) document.getElementById('val-volume').value = cfg.volume + '%';
+      
+      const btns = ['none', 'soft_drop', 'water_drop', 'tactile_switch'];
+      btns.forEach(id => {
+        const el = document.getElementById(`btn-sound-${id}`);
+        if (el) {
+          if (cfg.dropSound === id) {
+            el.classList.add('selected');
+            el.innerText = 'Selected';
+          } else {
+            el.classList.remove('selected');
+            el.innerText = 'Select';
+          }
+        }
+      });
+      
+      updateAudioVolume();
+    }
 
     function getComboMultiplier(c) {
       if (c <= 1) return 1.0;
@@ -721,6 +962,10 @@
       if (key === 'uiBgColor') document.documentElement.style.setProperty('--bg', cfg.uiBgColor);
       if (key === 'sat' || key === 'bright' || key === 'hue' || key === 'ghostAlpha') drawColorPreview();
       if (key === 'showMult') updateHUD();
+      if (key === 'volume') {
+        updateAudioVolume();
+        updateAudioUI();
+      }
     }
 
     function applyConfigToUI() {
@@ -742,6 +987,7 @@
       document.body.style.backgroundImage = cfg.bgImage ? `url('${cfg.bgImage}')` : 'none';
       document.documentElement.style.setProperty('--bg', cfg.uiBgColor);
       document.body.classList.toggle('light-mode', !cfg.darkmode);
+      updateAudioUI();
     }
 
     function updatePieceColor(type, hex) { pieceColors[type] = hex; saveData(); drawColorPreview(); }
@@ -866,6 +1112,7 @@
     }
 
     function startGame(selectedMode) {
+      initAudio(); // Initialize audio context on player gesture!
       mode = selectedMode;
       showScreen('screen-game');
       document.getElementById('disp-mode').innerText = mode.toUpperCase();
@@ -1049,6 +1296,10 @@
         }
       }
       piecesPlaced++;
+      
+      // Play Audio right as the piece is locked onto the grid!
+      playDropSound();
+
       clearLines(currentPiece.lastSpin);
       if (mode === 'sprint' && linesCleared >= 40) { triggerVictory(); return; }
       spawnPiece();
