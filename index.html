@@ -125,6 +125,22 @@
     font-weight: bold;
   }
 
+  .combo-box {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .combo-mult {
+    font-size: 0.95rem;
+    font-weight: bold;
+    opacity: 0.75;
+    display: none;
+  }
+  .combo-mult.show {
+    display: inline;
+  }
+
   canvas {
     background: var(--bg);
     border: 2px solid var(--border);
@@ -213,6 +229,7 @@
     transition: opacity 0.2s;
     text-align: center;
     width: 100%;
+    line-height: 1.4;
   }
   .action-text.show { opacity: 1; }
 
@@ -353,6 +370,10 @@
       <!-- Tab: Video & UI -->
       <div id="tab-video" class="tab-content">
         <div class="setting-row">
+          <div><div class="setting-label">Show Combo Multiplier</div><div class="setting-desc">Display multiplier next to combo</div></div>
+          <input type="checkbox" id="sw-showMult" checked onchange="updateSetting('showMult', this.checked)">
+        </div>
+        <div class="setting-row">
           <div><div class="setting-label">Dark Mode</div></div>
           <input type="checkbox" id="sw-darkmode" checked onchange="updateSetting('darkmode', this.checked)">
         </div>
@@ -474,7 +495,7 @@
 
       <!-- Center Board -->
       <div style="position: relative;">
-        <!-- 23 rows total * 30px = 690px height -->
+        <!-- 23 rows total (3 buffer rows + 20 matrix rows) * 30px = 690px -->
         <canvas id="cv-board" width="300" height="690"></canvas>
         <div id="action-popup" class="action-text"></div>
         <div id="countdown-layer" class="countdown-overlay"></div>
@@ -497,7 +518,10 @@
         </div>
         <div class="stat-box">
           <div class="stat-label">COMBO</div>
-          <div id="disp-combo" class="stat-value">0</div>
+          <div class="combo-box">
+            <span id="disp-combo" class="stat-value">0</span>
+            <span id="disp-combo-mult" class="combo-mult"></span>
+          </div>
         </div>
         <div class="stat-box">
           <div class="stat-label">INPUTS</div>
@@ -529,7 +553,8 @@
 
   <script>
     const COLS = 10;
-    const ROWS = 23; // 20 Playfield + 3 Wiggle Room Buffer
+    const ROWS = 23;
+    const SKY_BUFFER = 3;
     const CELL = 30; 
     
     // Core shapes for SRS
@@ -584,7 +609,7 @@
       das: 130, arr: 10, sdf: 20, darkmode: true, motionSickness: true,
       gridOpacity: 25, font: 'Courier New', ghostAlpha: 35,
       sat: 100, bright: 100, hue: 0, watermark: false, bgImage: '',
-      uiBgColor: '#001133'
+      uiBgColor: '#001133', showMult: true
     };
 
     let pieceColors = JSON.parse(JSON.stringify(PIECE_DEFAULTS));
@@ -617,6 +642,15 @@
     let moveHistory = [];
     let cvBoard, ctxBoard, cvHold, ctxHold, cvNext, ctxNext, cvColorPreview, ctxColorPreview;
     let shakeAmount = 0;
+
+    function getComboMultiplier(c) {
+      if (c <= 1) return 1.0;
+      let extra = c - 1;
+      if (extra <= 9) {
+        return 1.0 + extra * 0.05;
+      }
+      return 1.0 + (9 * 0.05) + ((extra - 9) * 0.075);
+    }
 
     function saveData() {
       localStorage.setItem('antigravityCfg', JSON.stringify(cfg));
@@ -664,7 +698,7 @@
         if (String(val).toUpperCase() === 'INF' || parsedVal >= 41) parsedVal = 41;
       }
       
-      if (key === 'darkmode' || key === 'motionSickness' || key === 'watermark' || key === 'bgImage' || key === 'uiBgColor') {
+      if (key === 'darkmode' || key === 'motionSickness' || key === 'watermark' || key === 'bgImage' || key === 'uiBgColor' || key === 'showMult') {
         cfg[key] = val;
       } else if (key === 'font') {
         cfg[key] = val;
@@ -686,6 +720,7 @@
       if (key === 'bgImage') document.body.style.backgroundImage = cfg.bgImage ? `url('${cfg.bgImage}')` : 'none';
       if (key === 'uiBgColor') document.documentElement.style.setProperty('--bg', cfg.uiBgColor);
       if (key === 'sat' || key === 'bright' || key === 'hue' || key === 'ghostAlpha') drawColorPreview();
+      if (key === 'showMult') updateHUD();
     }
 
     function applyConfigToUI() {
@@ -694,6 +729,7 @@
       document.getElementById('sl-sdf').value = cfg.sdf; document.getElementById('val-sdf').value = cfg.sdf >= 41 ? 'INF' : cfg.sdf + 'x';
       document.getElementById('sw-darkmode').checked = cfg.darkmode;
       document.getElementById('sw-motion').checked = cfg.motionSickness;
+      document.getElementById('sw-showMult').checked = cfg.showMult;
       document.getElementById('sl-gridOpacity').value = cfg.gridOpacity; document.getElementById('val-gridOpacity').value = cfg.gridOpacity + '%';
       document.getElementById('sel-font').value = cfg.font; document.body.style.fontFamily = cfg.font;
       document.getElementById('sl-ghostAlpha').value = cfg.ghostAlpha; document.getElementById('val-ghostAlpha').value = cfg.ghostAlpha + '%';
@@ -758,7 +794,7 @@
       const types = ['I','J','L','O','S','T','Z'];
       const cellSz = 16;
       types.forEach((type, idx) => {
-        const xOffset = 20 + idx * 75; // Increased spacing to prevent overlap
+        const xOffset = 20 + idx * 75;
         const yOffset = 20;
         const shape = SHAPES[type];
         
@@ -866,6 +902,10 @@
       }, 700);
     }
 
+    function getSpawnY(type) {
+      return (type === 'I') ? -1 : 0;
+    }
+
     function spawnPiece() {
       const type = nextQueue.shift();
       nextQueue.push(getNextPieceType());
@@ -875,15 +915,32 @@
         type: type,
         shape: JSON.parse(JSON.stringify(template)),
         x: Math.floor((COLS - template[0].length) / 2),
-        y: type === 'I' ? 1 : 2, // Spawn securely inside buffer zone
+        y: getSpawnY(type),
         rotation: 0,
         lastSpin: null
       };
 
       canHold = true; lockTimer = 0;
-      if (checkColl(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+
+      // Only trigger game over when piece spawns on top of an already placed piece
+      if (checkBlockOverlap(currentPiece.x, currentPiece.y, currentPiece.shape)) {
         triggerGameOver();
       }
+    }
+
+    // Only checks overlap with blocks on the grid
+    function checkBlockOverlap(x, y, shape) {
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          if (shape[r][c]) {
+            let gx = x + c; let gy = y + r;
+            if (gx >= 0 && gx < COLS && gy >= 0 && gy < ROWS && grid[gy][gx]) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
     }
 
     function checkColl(x, y, shape) {
@@ -967,25 +1024,30 @@
       if (!holdPiece) { holdPiece = currentType; spawnPiece(); }
       else {
         const temp = holdPiece; holdPiece = currentType;
-        currentPiece = { type: temp, shape: JSON.parse(JSON.stringify(SHAPES[temp])), x: Math.floor((COLS - SHAPES[temp][0].length) / 2), y: temp === 'I' ? 1 : 2, rotation: 0, lastSpin: null };
+        currentPiece = {
+          type: temp,
+          shape: JSON.parse(JSON.stringify(SHAPES[temp])),
+          x: Math.floor((COLS - SHAPES[temp][0].length) / 2),
+          y: getSpawnY(temp),
+          rotation: 0,
+          lastSpin: null
+        };
       }
       canHold = false;
     }
 
     function lockPiece() {
-      let isFullyAbove = true;
+      // Place blocks on the grid without ending game over border placement
       for (let r = 0; r < currentPiece.shape.length; r++) {
         for (let c = 0; c < currentPiece.shape[r].length; c++) {
           if (currentPiece.shape[r][c]) {
             let gy = currentPiece.y + r; let gx = currentPiece.x + c;
             if (gy >= 0 && gy < ROWS) {
               grid[gy][gx] = currentPiece.type;
-              if (gy >= 3) isFullyAbove = false;
             }
           }
         }
       }
-      if (isFullyAbove) { triggerGameOver(); return; }
       piecesPlaced++;
       clearLines(currentPiece.lastSpin);
       if (mode === 'sprint' && linesCleared >= 40) { triggerVictory(); return; }
@@ -1004,13 +1066,21 @@
       }
       if (clearedCount > 0) {
         linesCleared += clearedCount; combo++;
-        let msg = spinType ? `${spinType} ${['','SINGLE','DOUBLE','TRIPLE','TETRIS'][clearedCount]}!` : `${['','SINGLE','DOUBLE','TRIPLE','TETRIS'][clearedCount]}!`;
-        if (combo > 1) msg += `<br>${combo - 1} COMBO!`;
-        showActionPopup(msg);
-        if (!cfg.motionSickness) shakeAmount = clearedCount * 4;
+        
         let bp = [0, 100, 300, 500, 800][clearedCount] || 0;
         if (spinType) bp *= 2;
-        score += bp + (combo * 50);
+
+        let mult = getComboMultiplier(combo);
+        score += Math.round((bp + (combo * 50)) * mult);
+
+        let msg = spinType ? `${spinType} ${['','SINGLE','DOUBLE','TRIPLE','TETRIS'][clearedCount]}!` : `${['','SINGLE','DOUBLE','TRIPLE','TETRIS'][clearedCount]}!`;
+        if (combo > 1) {
+          let fontSize = Math.min(2.2, 1.1 + (combo - 1) * 0.08).toFixed(2);
+          let multText = cfg.showMult ? ` (${mult.toFixed(2)}x)` : '';
+          msg += `<br><span style="font-size: ${fontSize}rem; font-weight: bold;">${combo - 1} COMBO${multText}</span>`;
+        }
+        showActionPopup(msg);
+        if (!cfg.motionSickness) shakeAmount = clearedCount * 4;
       } else {
         combo = 0;
         if (spinType) showActionPopup(`${spinType}!`);
@@ -1148,9 +1218,16 @@
       ctxBoard.strokeStyle = `rgba(128,128,128,${cfg.gridOpacity / 100})`; ctxBoard.lineWidth = 1;
       for (let c = 0; c <= COLS; c++) { ctxBoard.beginPath(); ctxBoard.moveTo(c * CELL, 0); ctxBoard.lineTo(c * CELL, ROWS * CELL); ctxBoard.stroke(); }
       for (let r = 0; r <= ROWS; r++) { ctxBoard.beginPath(); ctxBoard.moveTo(0, r * CELL); ctxBoard.lineTo(COLS * CELL, r * CELL); ctxBoard.stroke(); }
-      // Playfield Ceiling at Row 3 (Y = 90)
-      ctxBoard.strokeStyle = 'var(--text)'; ctxBoard.lineWidth = 2; ctxBoard.setLineDash([10, 5]);
-      ctxBoard.beginPath(); ctxBoard.moveTo(0, 3 * CELL); ctxBoard.lineTo(COLS * CELL, 3 * CELL); ctxBoard.stroke(); ctxBoard.setLineDash([]);
+
+      // Matrix ceiling demarcation line at row 3
+      ctxBoard.strokeStyle = 'var(--text)';
+      ctxBoard.lineWidth = 2;
+      ctxBoard.setLineDash([10, 5]);
+      ctxBoard.beginPath();
+      ctxBoard.moveTo(0, SKY_BUFFER * CELL);
+      ctxBoard.lineTo(COLS * CELL, SKY_BUFFER * CELL);
+      ctxBoard.stroke();
+      ctxBoard.setLineDash([]);
     }
 
     function drawPlacedBlocks() {
@@ -1166,7 +1243,9 @@
         for (let c = 0; c < currentPiece.shape[r].length; c++) {
           if (currentPiece.shape[r][c]) {
             let gy = currentPiece.y + r; let gx = currentPiece.x + c;
-            if (gy >= 0 && gy < ROWS) drawBlock(ctxBoard, gx * CELL, gy * CELL, pieceColors[currentPiece.type]);
+            if (gy >= 0 && gy < ROWS && gx >= 0 && gx < COLS) {
+              drawBlock(ctxBoard, gx * CELL, gy * CELL, pieceColors[currentPiece.type]);
+            }
           }
         }
       }
@@ -1179,7 +1258,7 @@
         for (let c = 0; c < currentPiece.shape[r].length; c++) {
           if (currentPiece.shape[r][c]) {
             let gy = ghostY + r; let gx = currentPiece.x + c;
-            if (gy >= 0 && gy < ROWS) {
+            if (gy >= 0 && gy < ROWS && gx >= 0 && gx < COLS) {
               let px = gx * CELL, py = gy * CELL;
               ctxBoard.fillStyle = getAdjustedColor(pieceColors[currentPiece.type], cfg.ghostAlpha / 100);
               ctxBoard.fillRect(px, py, CELL, CELL);
@@ -1251,7 +1330,19 @@
     function updateHUD() {
       document.getElementById('disp-score').innerText = score.toLocaleString();
       document.getElementById('disp-lines').innerText = linesCleared;
-      document.getElementById('disp-combo').innerText = combo > 0 ? combo : 0;
+      
+      const comboDisp = document.getElementById('disp-combo');
+      const multDisp = document.getElementById('disp-combo-mult');
+      comboDisp.innerText = combo > 0 ? combo : 0;
+
+      if (combo > 1 && cfg.showMult) {
+        let mult = getComboMultiplier(combo);
+        multDisp.innerText = `(${mult.toFixed(2)}x)`;
+        multDisp.classList.add('show');
+      } else {
+        multDisp.classList.remove('show');
+      }
+
       let sec = elapsedMs / 1000;
       document.getElementById('disp-time').innerText = `${Math.floor(sec / 60).toString().padStart(2, '0')}:${(sec % 60).toFixed(2).padStart(5, '0')}`;
       document.getElementById('disp-pps').innerText = sec > 0 ? (piecesPlaced / sec).toFixed(2) : '0.00';
