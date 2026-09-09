@@ -22,3 +22,8 @@ Features:
 - Adjustable grid opacity
 - Multiple font options
 - Local storage saving
+
+https://bkinprojects.github.io/blockgamev2/
+                  ^
+play on this link |
+                  |
