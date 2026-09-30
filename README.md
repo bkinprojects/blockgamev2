@@ -21,7 +21,14 @@ Features:
 - Motion sickness mode
 - Adjustable grid opacity
 - Multiple font options
-- Local storage saving
+- Practice (Zen) mode
+  - Instant resetting and no countdowns
+  - Perfect Clear (PC) counter
+  - Gravity toggle (On/Off)
+  - Undo (`Ctrl+Z`) and Redo (`Ctrl+Y`) with smooth board rotation animations
+- Super Rotation System (SRS) accuracy improvements (lock delay resets)
+- Spawn collision and hold piece bug fixes
+
 
 https://bkinprojects.github.io/blockgamev2/
                   ^
